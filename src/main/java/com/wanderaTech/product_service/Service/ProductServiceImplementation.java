@@ -32,7 +32,7 @@ public class ProductServiceImplementation implements ProductServiceInterface {
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
 
-    //this method creates product then  sends  the event to inventory to initialize product  stock (kafka )
+    //this method creates product then  sends  the event to inventory to initialize product  stock (Kafka )
 //    @CachePut(value = "createProduct", key = "#result.productId")
     @Transactional
     @Override
