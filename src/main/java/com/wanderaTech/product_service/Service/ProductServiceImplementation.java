@@ -49,7 +49,7 @@ public class ProductServiceImplementation implements ProductServiceInterface {
         ProductCreatedEvent event = new ProductCreatedEvent(
                 response.getProductId(),
                 response.getProductName(),
-                savedProduct.getUserId(),
+                savedProduct.getSellerId(),
                 productRequest.getStock()
         );
 
@@ -103,7 +103,7 @@ public class ProductServiceImplementation implements ProductServiceInterface {
                         product.getProductName(),
                         product.getProductDescription(),
                         product.getPrice(),
-                        product.getUserId()
+                        product.getSellerId()
                 ))
                 .toList();
     }
@@ -168,10 +168,10 @@ public class ProductServiceImplementation implements ProductServiceInterface {
 //                 unless = "#result.isEmpty()"
 //         )
     @Override
-    public List<ProductResponse> getProductUnderSellerId(String userId,int page, int size) {
+    public List<ProductResponse> getProductUnderSellerId(String sellerId,int page, int size) {
              Pageable pageable = PageRequest.of(page, size);
-             List<Product> products = productRepository.findByUserId(userId,pageable)
-                .orElseThrow(()->new RuntimeException("No product found under the sellerId: " + userId));
+             List<Product> products = productRepository.findBySellerId(sellerId,pageable)
+                .orElseThrow(()->new RuntimeException("No product found under the sellerId: " + sellerId));
 
 
         // Map each Product entity to ProductResponse
@@ -181,7 +181,7 @@ public class ProductServiceImplementation implements ProductServiceInterface {
                         product.getProductName(),
                         product.getProductDescription(),
                         product.getPrice(),
-                        product.getUserId()
+                        product.getSellerId()
                 ))
                 .toList();
     }
@@ -215,7 +215,7 @@ public class ProductServiceImplementation implements ProductServiceInterface {
         productResponse.setProductId(saveProduct.getProductId());
         productResponse.setProductName(saveProduct.getProductName());
         productResponse.setPrice(saveProduct.getPrice());
-        productResponse.setUserId(saveProduct.getUserId());
+        productResponse.setSellerId(saveProduct.getSellerId());
         productResponse.setProductDescription(saveProduct.getProductDescription());
         return productResponse;
     }
@@ -223,10 +223,9 @@ public class ProductServiceImplementation implements ProductServiceInterface {
 
     private Product toEntity(ProductRequest productRequest) {
         return Product.builder()
-
+                .sellerId(productRequest.getSellerId())
                 .productId(generateProductId())
                 .productName(productRequest.getProductName())
-
                 .productDescription(productRequest.getProductDescription())
                 .price(productRequest.getPrice())
                 .categoryName(productRequest.getCategoryName())
