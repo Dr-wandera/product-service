@@ -20,7 +20,7 @@ public class Product {
     private String productId;
 
     @Column(name = "seller_id")
-    private String userId;
+    private String  sellerId;
 
     @Column(name = "product_name")
     @NotBlank(message = "product_name required")
