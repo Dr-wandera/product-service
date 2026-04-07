@@ -6,6 +6,7 @@ import com.wanderaTech.common_events.productEvent.ProductCreatedEvent;
 import com.wanderaTech.product_service.KafkaConfig.StockProducer;
 import com.wanderaTech.product_service.Model.OutboxEvent;
 import com.wanderaTech.product_service.Model.Product;
+import com.wanderaTech.product_service.ProductDto.ProductCreatedRequest;
 import com.wanderaTech.product_service.ProductDto.ProductRequest;
 import com.wanderaTech.product_service.ProductDto.ProductResponse;
 import com.wanderaTech.product_service.Repository.OutboxRepository;
@@ -47,8 +48,8 @@ public class ProductServiceImplementation implements ProductServiceInterface {
 
         //  Prepare the Event Object for stock initialization (Kafka)
         ProductCreatedEvent event = new ProductCreatedEvent(
-                response.getProductId(),
-                response.getProductName(),
+                savedProduct.getProductId(),
+                savedProduct.getProductName(),
                 savedProduct.getSellerId(),
                 productRequest.getStock()
         );
@@ -56,14 +57,14 @@ public class ProductServiceImplementation implements ProductServiceInterface {
         //  Attempt Kafka Send event to the inventory to initialize the product stock
         //use the ddl if the kafka is low the event is saved in the outbox for retries if the kafka return  online
         try {
-            log.info("Attempting to send ProductCreatedEvent for ID: {}", response.getProductId());
+            log.info("Attempting to send ProductCreatedEvent for ID: {}", savedProduct.getProductId());
             stockProducer.sendInitialStock(event);
         } catch (Exception e) {
-            log.error("Kafka failure for product  id {}. Saving to Outbox for retry.", response.getProductId());
+            log.error("Kafka failure for product  id {}. Saving to Outbox for retry.", savedProduct.getProductId());
 
             // 4. Save to Outbox Table if Kafka fails
             OutboxEvent outboxEntry = OutboxEvent.builder()
-                    .aggregateId(response.getProductId())
+                    .aggregateId(savedProduct.getProductId())
                     .eventType("PRODUCT_STOCK_INIT")
                     .payload(serializeToJson(event))
                     .createdAt(LocalDateTime.now())
@@ -99,11 +100,9 @@ public class ProductServiceImplementation implements ProductServiceInterface {
 
         return products.stream()
                 .map(product -> new ProductResponse(
-                        String.valueOf(product.getProductId()),
                         product.getProductName(),
                         product.getProductDescription(),
-                        product.getPrice(),
-                        product.getSellerId()
+                        product.getPrice()
                 ))
                 .toList();
     }
@@ -177,11 +176,9 @@ public class ProductServiceImplementation implements ProductServiceInterface {
         // Map each Product entity to ProductResponse
         return products.stream()
                 .map(product -> new ProductResponse(
-                        String.valueOf(product.getProductId()),
                         product.getProductName(),
                         product.getProductDescription(),
-                        product.getPrice(),
-                        product.getSellerId()
+                        product.getPrice()
                 ))
                 .toList();
     }
@@ -199,7 +196,49 @@ public class ProductServiceImplementation implements ProductServiceInterface {
         return toProductDto(product);
 
     }
+    //update product
 
+    @Override
+    public ProductResponse updateProduct(String productId, ProductCreatedRequest productRequest) {
+
+        Product product = productRepository.findByProductId(productId)
+                .orElseThrow(() -> new RuntimeException("Product not available, check and try again"));
+
+        //  Ownership validation
+        if (!product.getSellerId().equals(productRequest.getSellerId())) {
+            throw new RuntimeException("Access Denied");
+        }
+
+        // Partial updates of attribute
+        if (productRequest.getProductName() != null &&
+                !productRequest.getProductName().isBlank()) {
+            product.setProductName(productRequest.getProductName());
+        }
+
+        if (productRequest.getProductDescription() != null &&
+                !productRequest.getProductDescription().isBlank()) {
+            product.setProductDescription(productRequest.getProductDescription());
+        }
+
+        if (productRequest.getCategoryName() != null &&
+                !productRequest.getCategoryName().isBlank()) {
+            product.setCategoryName(productRequest.getCategoryName());
+        }
+
+
+        if (productRequest.getPrice() != null && productRequest.getPrice() > 0) {
+            product.setPrice(productRequest.getPrice());
+        }
+
+        if (productRequest.getImageUrl() != null &&
+                !productRequest.getImageUrl().isBlank()) {
+            product.setImageUrl(productRequest.getImageUrl());
+        }
+
+        Product updatedProduct = productRepository.save(product);
+
+        return mapToResponse(updatedProduct);
+    }
     private ProductResponse mapToResponse(Product product) {
         ProductResponse productResponse = new ProductResponse();
         productResponse.setProductName(product.getProductName());
@@ -212,10 +251,8 @@ public class ProductServiceImplementation implements ProductServiceInterface {
 
     private ProductResponse toProductDto(Product saveProduct) {
         ProductResponse productResponse = new ProductResponse();
-        productResponse.setProductId(saveProduct.getProductId());
         productResponse.setProductName(saveProduct.getProductName());
         productResponse.setPrice(saveProduct.getPrice());
-        productResponse.setSellerId(saveProduct.getSellerId());
         productResponse.setProductDescription(saveProduct.getProductDescription());
         return productResponse;
     }
