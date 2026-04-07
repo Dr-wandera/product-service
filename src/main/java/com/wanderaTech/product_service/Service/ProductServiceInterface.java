@@ -1,5 +1,6 @@
 package com.wanderaTech.product_service.Service;
 
+import com.wanderaTech.product_service.ProductDto.ProductCreatedRequest;
 import com.wanderaTech.product_service.ProductDto.ProductRequest;
 import com.wanderaTech.product_service.ProductDto.ProductResponse;
 import reactor.core.publisher.Flux;
@@ -19,4 +20,7 @@ public interface ProductServiceInterface {
     List<ProductResponse> getProductUnderSellerId(String sellerId,int page,int size);
 
     ProductResponse findByProductId(String productId);
+
+    ProductResponse updateProduct(String productId, ProductCreatedRequest productRequest);
+
 }
