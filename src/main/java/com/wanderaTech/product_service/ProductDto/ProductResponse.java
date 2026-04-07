@@ -10,10 +10,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProductResponse  {
-    private String productId;
     private String productName;
     private String productDescription;
     private Double price;
-    private String sellerId;
-
 }
