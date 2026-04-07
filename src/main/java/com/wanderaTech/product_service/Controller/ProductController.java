@@ -1,5 +1,6 @@
 package com.wanderaTech.product_service.Controller;
 
+import com.wanderaTech.product_service.ProductDto.ProductCreatedRequest;
 import com.wanderaTech.product_service.ProductDto.ProductRequest;
 import com.wanderaTech.product_service.ProductDto.ProductResponse;
 import com.wanderaTech.product_service.Service.ProductServiceImplementation;
@@ -69,5 +70,14 @@ public class ProductController {
     ) {
         return productServiceImplementation.getProductUnderSellerId(sellerId,page,size);
     }
+    @PutMapping("/updateProduct/{productId}")
+    @ResponseStatus(HttpStatus.OK)
+    public ProductResponse updateProduct(
+            @PathVariable String productId,
+            @RequestHeader("X-User-Id") String sellerId,
+            @RequestBody ProductCreatedRequest productRequest){
 
+        productRequest.setSellerId(sellerId); //  OVERRIDE productRequest by adding sellerId  (critical security)
+        return productServiceImplementation.updateProduct(productId, productRequest);
+    }
 }
