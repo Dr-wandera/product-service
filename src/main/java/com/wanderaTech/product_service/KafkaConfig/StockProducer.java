@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class StockProducer {
     //this publishes kafka event  to  initialize stock of the product created
-    private final KafkaTemplate<String,ProductCreatedEvent> kafkaTemplate;
+    private final KafkaTemplate<String, ProductCreatedEvent> kafkaTemplate;
 
     public void  sendInitialStock(ProductCreatedEvent productCreatedEvent){
         log.info("Start sending initial stock event to the inventory");
@@ -25,7 +25,7 @@ public class StockProducer {
                 .build();
         kafkaTemplate.send(message);
 
-        log.info("sent initial stock event to the inventory of product Id {}", productCreatedEvent.getProductId());
+        log.info("Sent product stock to inventory service {}", productCreatedEvent.getProductId());
         kafkaTemplate.flush();
 
 
