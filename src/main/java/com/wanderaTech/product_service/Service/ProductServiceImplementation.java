@@ -15,6 +15,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,7 +36,7 @@ public class ProductServiceImplementation implements ProductServiceInterface {
     private final ObjectMapper objectMapper;
 
     //this method creates product then  sends  the event to inventory to initialize product  stock (Kafka )
-//    @CachePut(value = "createProduct", key = "#result.productId")
+    @CachePut(value = "createProduct", key = "#result.productId")
     @Transactional
     @Override
     public ProductResponse createProduct(ProductRequest productRequest) {
@@ -55,7 +57,7 @@ public class ProductServiceImplementation implements ProductServiceInterface {
         );
 
         //  Attempt Kafka Send event to the inventory to initialize the product stock
-        //use the ddl if the kafka is low the event is saved in the outbox for retries if the kafka return  online
+        //use the ddl if the Kafka is low the event is saved in the outbox for retries if the kafka return  online
         try {
             log.info("Attempting to send ProductCreatedEvent for ID: {}", savedProduct.getProductId());
             stockProducer.sendInitialStock(event);
@@ -86,10 +88,10 @@ public class ProductServiceImplementation implements ProductServiceInterface {
         }
     }
 
-//    @Cacheable(
-//            value = "productsByCategory",
-//            key = "#categoryName + '_' + #page + '_' + #size"
-//    )
+    @Cacheable(
+            value = "productsByCategory",
+            key = "#categoryName + '_' + #page + '_' + #size"
+    )
     @Override
     public List<ProductResponse> getProductsByCategory(String categoryName, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -107,12 +109,12 @@ public class ProductServiceImplementation implements ProductServiceInterface {
                 .toList();
     }
 
-//    @Cacheable(
-//            value = "productsByName",
-//            key = "#productName + '_' + #page + '_' + #size",
-//            condition = "#productName != null && #productName.length() > 3",
-//            unless = "#result.isEmpty()"
-//    )
+    @Cacheable(
+            value = "productsByName",
+            key = "#productName + '_' + #page + '_' + #size",
+            condition = "#productName != null && #productName.length() > 3",
+            unless = "#result.isEmpty()"
+    )
     @Override
     public List<ProductResponse> getProductByName(String productName,int page, int size) {
 
@@ -145,11 +147,11 @@ public class ProductServiceImplementation implements ProductServiceInterface {
                 .toList();
     }
 
-//    @Cacheable(
-//            value = "allProducts",
-//            key = "#page + '_' + #size",
-//            unless = "#result.isEmpty()"
-//    )
+    @Cacheable(
+            value = "allProducts",
+            key = "#page + '_' + #size",
+            unless = "#result.isEmpty()"
+    )
     @Override
     public List<ProductResponse> findAllProducts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -161,11 +163,11 @@ public class ProductServiceImplementation implements ProductServiceInterface {
 
 
          //find all product that a seller has added in the product-service
-//         @Cacheable(
-//                 value = "productsBySeller",
-//                 key = "#sellerId + '_' + #page + '_' + #size",
-//                 unless = "#result.isEmpty()"
-//         )
+         @Cacheable(
+                 value = "productsBySeller",
+                 key = "#sellerId + '_' + #page + '_' + #size",
+                 unless = "#result.isEmpty()"
+         )
     @Override
     public List<ProductResponse> getProductUnderSellerId(String sellerId,int page, int size) {
              Pageable pageable = PageRequest.of(page, size);
@@ -183,11 +185,11 @@ public class ProductServiceImplementation implements ProductServiceInterface {
                 .toList();
     }
 
-//    @Cacheable(
-//            value = "findByProductId",
-//            key = "#productId",
-//            unless = "#result == null"
-//    )
+    @Cacheable(
+            value = "findByProductId",
+            key = "#productId",
+            unless = "#result == null"
+    )
     @Override
     public ProductResponse findByProductId(String productId) {
         Product product=productRepository.findByProductId(productId)
