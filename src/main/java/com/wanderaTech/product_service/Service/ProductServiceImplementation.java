@@ -15,8 +15,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,7 +38,7 @@ public class ProductServiceImplementation implements ProductServiceInterface {
     private final ObjectMapper objectMapper;
 
     //this method creates product then  sends  the event to inventory to initialize product  stock (Kafka )
-    @CachePut(value = "createProduct", key = "#result.productId")
+    @CacheEvict(value = "PRODUCT_DATA", allEntries = true)
     @Transactional
     @Override
     public ProductResponse createProduct(ProductRequest productRequest) {
@@ -88,19 +90,20 @@ public class ProductServiceImplementation implements ProductServiceInterface {
         }
     }
 
-    @Cacheable(
-            value = "productsByCategory",
-            key = "#categoryName + '_' + #page + '_' + #size"
-    )
     @Override
+    @Cacheable(
+            value = "PRODUCT_DATA",
+            key = "#categoryName + '-' + #page + '-' + #size"
+    )
     public List<ProductResponse> getProductsByCategory(String categoryName, int page, int size) {
+
         Pageable pageable = PageRequest.of(page, size);
 
-        // Pass the pageable object to your repository
-        List<Product> products = productRepository.findByCategoryName(categoryName, pageable)
-                .orElseThrow(() -> new RuntimeException("No product in this category: " + categoryName));
+        Page<Product> productsPage =
+                productRepository.findByCategoryName(categoryName, pageable);
 
-        return products.stream()
+        return productsPage.getContent()
+                .stream()
                 .map(product -> new ProductResponse(
                         product.getProductName(),
                         product.getProductDescription(),
@@ -200,6 +203,7 @@ public class ProductServiceImplementation implements ProductServiceInterface {
     }
     //update product
 
+    @CachePut(value = "PRODUCT_UPDATE", key = "#productId")
     @Override
     public ProductResponse updateProduct(String productId, ProductCreatedRequest productRequest) {
 
